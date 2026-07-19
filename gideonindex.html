@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gideon — Defender's Quest</title>
+<style>
+  :root{
+    --bg:#0a0e1c;--card:#121834;--card2:#1a2246;--line:#28325c;
+    --txt:#eef1fb;--mut:#98a3c7;--dim:#6b769a;
+    --grn:#46e0a0;--amber:#ffbf47;--purple:#a78bfa;--blue:#5b8cff;--red:#ff6b81;--cyan:#48d6e0;
+    --shadow:0 10px 34px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1100px 500px at 75% -10%,#17204a,var(--bg) 55%);
+    color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+  .wrap{max-width:960px;margin:0 auto;padding:16px 16px 90px}
+  .top{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+  .top h1{font-size:19px;margin:0;letter-spacing:-.02em}
+  .top .sub{font-size:11.5px;color:var(--mut);margin-top:-2px}
+  .off{margin-left:auto;font-size:11px;font-weight:700;color:var(--grn);
+    background:rgba(70,224,160,.08);border:1px solid rgba(70,224,160,.3);padding:5px 11px;border-radius:20px}
+  /* HUD */
+  .hud{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .stat .lab{font-size:10.5px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .stat .big{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
+  .stat.lib .big{color:var(--grn)}.stat.streak .big{color:var(--amber)}
+  .xpbar{height:7px;background:var(--card2);border-radius:6px;margin-top:8px;overflow:hidden}
+  .xpbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),var(--blue));border-radius:6px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+  /* hero */
+  .hero{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(167,139,250,.13),rgba(72,214,224,.07));
+    border:1px solid rgba(167,139,250,.3);border-radius:16px;padding:12px 14px;margin-bottom:14px}
+  .heroChar{width:96px;flex:none;filter:drop-shadow(0 6px 12px rgba(0,0,0,.4));animation:bob 3.2s ease-in-out infinite;transform-origin:bottom center}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-5px) rotate(1deg)}}
+  .heroChar.cheer{animation:cheer .7s ease}
+  @keyframes cheer{0%{transform:translateY(0)}30%{transform:translateY(-20px) rotate(-6deg) scale(1.05)}60%{transform:translateY(-6px) rotate(4deg)}100%{transform:translateY(0)}}
+  .heroText .hn{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--purple)}
+  .heroText .hq{font-size:14.5px;font-weight:700;margin-top:2px}
+  .heroText .hs{font-size:12.5px;color:var(--mut);margin-top:3px}
+  /* badges */
+  .badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+  .bg{display:flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:700}
+  .bg.locked{opacity:.32}
+  /* tabs */
+  .tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px;background:var(--card);border:1px solid var(--line);padding:5px;border-radius:12px}
+  .tab{flex:1;min-width:96px;background:none;border:none;color:var(--mut);font-size:13px;font-weight:700;padding:9px 6px;border-radius:8px;cursor:pointer}
+  .tab.active{background:var(--card2);color:var(--txt)}
+  .pane{display:none}.pane.active{display:block;animation:fade .3s}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+  h2{font-size:16px;margin:0 0 4px}.hint{color:var(--mut);font-size:12.5px;margin:0 0 12px}
+  .banner{background:rgba(255,191,71,.09);border:1px solid rgba(255,191,71,.32);border-radius:12px;padding:10px 13px;font-size:12.5px;color:#ffdca0;margin-bottom:14px}
+  .banner b{color:var(--amber)}
+  label{display:block;font-size:11.5px;color:var(--mut);font-weight:600;margin:0 0 4px}
+  input,select,textarea{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:9px;color:var(--txt);padding:9px;font-size:14px;font-family:inherit}
+  textarea{min-height:60px;resize:vertical}
+  .row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1;min-width:130px}
+  .btn{background:var(--blue);color:#fff;border:none;font-weight:700;font-size:14px;padding:10px 15px;border-radius:10px;cursor:pointer}
+  .btn:active{transform:scale(.99)}.btn.sm{padding:7px 11px;font-size:12.5px}
+  .btn.ghost{background:var(--card2);border:1px solid var(--line);color:var(--txt)}
+  .btn.red{background:rgba(255,107,129,.15);color:var(--red);border:1px solid rgba(255,107,129,.3)}
+  .item{background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:9px}
+  .item .h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.item .nm{font-weight:700;font-size:14px}
+  .item .meta{color:var(--mut);font-size:12.5px}
+  .spacer{flex:1}
+  .pill{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px}
+  .pill.g{color:var(--grn);background:rgba(70,224,160,.12)}.pill.y{color:var(--amber);background:rgba(255,191,71,.12)}
+  .pill.r{color:var(--red);background:rgba(255,107,129,.12)}.pill.b{color:var(--blue);background:rgba(91,140,255,.12)}
+  .check{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+  .check:last-child{border-bottom:none}
+  .box{width:22px;height:22px;border-radius:6px;border:2px solid var(--dim);flex:none;display:grid;place-items:center;cursor:pointer;font-size:13px;margin-top:1px}
+  .check.on .box{background:var(--grn);border-color:var(--grn);color:#04121a}
+  .check .l2{font-size:14px;font-weight:600}.check.on .l2{color:var(--mut)}
+  .ring{--p:0;width:60px;height:60px;border-radius:50%;flex:none;background:conic-gradient(var(--grn) calc(var(--p)*1%),var(--card2) 0);display:grid;place-items:center}
+  .ring i{width:46px;height:46px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-weight:800;font-style:normal;font-size:14px}
+  .packhead{display:flex;align-items:center;gap:13px;margin-bottom:12px}
+  .flag{background:rgba(255,107,129,.08);border:1px solid rgba(255,107,129,.3);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px}
+  .flag b{color:var(--red)}.okmsg{color:var(--grn);font-size:13px}
+  .qgrp{margin-bottom:14px}.qgrp h3{font-size:12.5px;color:var(--cyan);margin:0 0 7px;text-transform:uppercase;letter-spacing:.05em}
+  .q{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .q:last-child{border-bottom:none}.q .qt{flex:1}.q select{width:auto;min-width:88px;padding:6px 8px;font-size:12.5px}
+  .empty{color:var(--dim);font-size:13px;text-align:center;padding:14px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .casebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .casebar select,.casebar input{width:auto}
+  /* toast + confetti */
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);opacity:0;
+    background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:11px 17px;font-size:14px;font-weight:700;
+    box-shadow:var(--shadow);z-index:120;transition:.35s;display:flex;gap:9px;pointer-events:none}
+  #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  #toast .xp{color:var(--amber)}#toast .lib{color:var(--grn)}#toast .bd{color:var(--purple)}
+  .conf{position:fixed;width:9px;height:14px;top:-20px;z-index:130;pointer-events:none;border-radius:2px}
+  .mission{display:flex;align-items:center;gap:11px;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:10px 13px;margin-bottom:8px}
+  .mission .mi{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:16px;flex:none;background:rgba(167,139,250,.15)}
+  .mission .mt{font-size:13.5px;font-weight:700}.mission .md{font-size:12px;color:var(--mut)}
+  .xpchip{margin-left:auto;font-size:11px;font-weight:800;color:var(--amber);background:rgba(255,191,71,.12);border:1px solid rgba(255,191,71,.3);padding:3px 9px;border-radius:20px}
+  @media(max-width:640px){.hud{grid-template-columns:1fr 1fr}}
+  /* accessibility */
+  :focus-visible{outline:3px solid var(--amber);outline-offset:2px;border-radius:6px}
+  body.a11y-large{font-size:119%}
+  body.a11y-contrast{--mut:#cdd6ec;--dim:#b3bdd6;--txt:#ffffff}
+  body.a11y-contrast .banner{color:#ffe9bd}
+  body.a11y-contrast .hint{color:#b8c2da}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+  body.a11y-nomotion .heroChar{animation:none!important}
+  body.a11y-nomotion .conf{display:none!important}
+  .a11ybar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .a11ybar button{background:var(--card2);border:1px solid var(--line);color:var(--txt);font-weight:700;font-size:12.5px;padding:9px 13px;border-radius:9px;cursor:pointer;min-height:40px}
+  .a11ybar button[aria-pressed="true"]{background:var(--purple);color:#0b1020;border-color:var(--purple)}
+  .curcase{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .curcase .newbtn{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;font-size:15px;min-height:44px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <svg width="40" height="40" viewBox="0 0 512 512" aria-label="Gideon">
+      <defs>
+        <linearGradient id="bd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c6cf0"/><stop offset=".55" stop-color="#5b8cff"/><stop offset="1" stop-color="#48d6e0"/></linearGradient>
+        <linearGradient id="gd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#ffbf47"/></linearGradient>
+        <linearGradient id="pn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2246"/><stop offset="1" stop-color="#0d1226"/></linearGradient>
+        <clipPath id="pc"><path d="M256 84 L392 144 V272 C392 344 336 398 256 430 C176 398 120 344 120 272 V144 Z"/></clipPath>
+      </defs>
+      <path d="M256 48 L424 122 V276 C424 366 356 430 256 466 C156 430 88 366 88 276 V122 Z" fill="url(#bd)"/>
+      <path d="M256 48 L424 122 V276 C424 366 356 430 256 466 C156 430 88 366 88 276 V122 Z" fill="none" stroke="url(#gd)" stroke-width="12"/>
+      <path d="M256 84 L392 144 V272 C392 344 336 398 256 430 C176 398 120 344 120 272 V144 Z" fill="url(#pn)"/>
+      <g clip-path="url(#pc)">
+        <path d="M150 430 Q150 360 200 344 L312 344 Q362 360 362 430 Z" fill="#6a4fd6"/>
+        <path d="M186 430 Q188 356 256 348 Q324 356 326 430 Z" fill="#5b8cff"/>
+        <rect x="238" y="316" width="36" height="42" rx="14" fill="#dda579"/>
+        <ellipse cx="256" cy="250" rx="58" ry="64" fill="#e8b48c"/>
+        <path d="M198 250 Q194 186 256 180 Q318 186 314 250 Q306 212 286 204 Q270 192 256 198 Q242 192 226 204 Q206 212 198 250 Z" fill="#d9dee9"/>
+        <g fill="none" stroke="#12162a" stroke-width="9"><rect x="212" y="252" width="42" height="32" rx="13"/><rect x="258" y="252" width="42" height="32" rx="13"/><line x1="254" y1="264" x2="258" y2="264"/></g>
+        <path d="M234 302 q22 10 46 0" stroke="#a2673f" stroke-width="6" fill="none" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <div><h1>Gideon — Defender's Quest</h1><div class="sub">offline case toolkit · leveled up</div></div>
+    <span class="off">● offline · stays on this device</span>
+  </div>
+
+  <div class="hud">
+    <div class="stat"><div class="lab">⭐ Level <span id="lvlName" style="color:var(--purple)"></span></div><div class="big">Lv <span id="lvl">1</span></div><div class="xpbar"><i id="xpFill"></i></div></div>
+    <div class="stat lib"><div class="lab">🕊️ Liberty days</div><div class="big" id="lib">0</div></div>
+    <div class="stat streak"><div class="lab">🔥 Streak</div><div class="big"><span id="streak">1</span></div></div>
+    <div class="stat"><div class="lab">⚡ XP</div><div class="big" id="xp">0</div></div>
+  </div>
+
+  <div class="hero">
+    <svg class="heroChar" id="heroChar" viewBox="0 0 512 512" aria-label="Gideon">
+      <defs>
+        <linearGradient id="hbd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c6cf0"/><stop offset=".55" stop-color="#5b8cff"/><stop offset="1" stop-color="#48d6e0"/></linearGradient>
+        <linearGradient id="hgd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#ffbf47"/></linearGradient>
+        <linearGradient id="hpn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2246"/><stop offset="1" stop-color="#0d1226"/></linearGradient>
+        <clipPath id="hpc"><path d="M256 84 L392 144 V272 C392 344 336 398 256 430 C176 398 120 344 120 272 V144 Z"/></clipPath>
+      </defs>
+      <path d="M256 48 L424 122 V276 C424 366 356 430 256 466 C156 430 88 366 88 276 V122 Z" fill="url(#hbd)"/>
+      <path d="M256 48 L424 122 V276 C424 366 356 430 256 466 C156 430 88 366 88 276 V122 Z" fill="none" stroke="url(#hgd)" stroke-width="12"/>
+      <path d="M256 84 L392 144 V272 C392 344 336 398 256 430 C176 398 120 344 120 272 V144 Z" fill="url(#hpn)"/>
+      <g clip-path="url(#hpc)">
+        <path d="M150 430 Q150 360 200 344 L312 344 Q362 360 362 430 Z" fill="#6a4fd6"/>
+        <path d="M186 430 Q188 356 256 348 Q324 356 326 430 Z" fill="#5b8cff"/>
+        <rect x="238" y="316" width="36" height="42" rx="14" fill="#dda579"/>
+        <ellipse cx="256" cy="250" rx="58" ry="64" fill="#e8b48c"/>
+        <path d="M198 250 Q194 186 256 180 Q318 186 314 250 Q306 212 286 204 Q270 192 256 198 Q242 192 226 204 Q206 212 198 250 Z" fill="#d9dee9"/>
+        <g fill="none" stroke="#12162a" stroke-width="9"><rect x="212" y="252" width="42" height="32" rx="13"/><rect x="258" y="252" width="42" height="32" rx="13"/><line x1="254" y1="264" x2="258" y2="264"/></g>
+        <path d="M234 302 q22 10 46 0" stroke="#a2673f" stroke-width="6" fill="none" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <div class="heroText">
+      <div class="hn">Your champion</div>
+      <div class="hq">“Every deadline caught is someone's freedom protected.”</div>
+      <div class="hs" id="heroLine">Pick a tab and let's get to work. I've got your back.</div>
+    </div>
+  </div>
+
+  <div class="banner"><b>⚠ Working aid — not legal advice, no case-law verification.</b> Confirm every deadline against the official court calendar. It prompts your judgment; you make every legal call. Everything stays offline on this device.</div>
+
+  <div class="tabs">
+    <button class="tab active" data-p="p-home">🏅 Missions</button>
+    <button class="tab" data-p="p-dead">⏰ Deadlines</button>
+    <button class="tab" data-p="p-brady">📋 Brady</button>
+    <button class="tab" data-p="p-mit">📖 Mitigation</button>
+    <button class="tab" data-p="p-supp">⚖️ Suppression</button>
+    <button class="tab" data-p="p-foot">🎥 Footage</button>
+    <button class="tab" data-p="p-docs">📎 Docs</button>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn ghost sm" onclick="exportData()">⬇ Save backup</button>
+    <button class="btn ghost sm" onclick="document.getElementById('imp').click()">⬆ Load backup</button>
+    <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(this)">
+    <span class="spacer"></span><span id="saveState" style="font-size:11px;color:var(--dim);align-self:center"></span>
+  </div>
+
+  <!-- HOME / MISSIONS -->
+  <div class="pane active" id="p-home">
+    <div class="a11ybar" role="group" aria-label="Accessibility options">
+      <button id="a11yText" type="button" aria-pressed="false" onclick="toggleA11y('large','a11y-large',this)">🔠 Bigger text</button>
+      <button id="a11yContrast" type="button" aria-pressed="false" onclick="toggleA11y('contrast','a11y-contrast',this)">🌗 Higher contrast</button>
+      <button id="a11yMotion" type="button" aria-pressed="false" onclick="toggleA11y('nomotion','a11y-nomotion',this)">🎬 Reduce motion</button>
+    </div>
+    <div class="card">
+      <h2>Your cases</h2>
+      <p class="hint">Pick the case you're working on — every tab follows it. Or start a new one.</p>
+      <div class="curcase">
+        <label for="homeCase" style="margin:0">Current case</label>
+        <select id="homeCase" onchange="setCurFromHome(this.value)" style="width:auto;min-width:170px" aria-label="Choose current case"></select>
+        <input id="homeNew" placeholder="New client / case name" style="min-width:170px" aria-label="New case name" onkeydown="if(event.key==='Enter')newCaseFromHome()">
+        <button class="btn newbtn" type="button" onclick="newCaseFromHome()">＋ New case</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Today's missions</h2>
+      <p class="hint">Small wins add up. Each one earns XP and moves a client's case forward.</p>
+      <div class="mission"><div class="mi">⏰</div><div><div class="mt">Add or check a deadline</div><div class="md">Keep the clock from beating you</div></div><span class="xpchip">+15</span></div>
+      <div class="mission"><div class="mi">📋</div><div><div class="mt">Update a Brady item</div><div class="md">Track what the DA still owes</div></div><span class="xpchip">+10</span></div>
+      <div class="mission"><div class="mi">📖</div><div><div class="mt">Build a mitigation packet</div><div class="md">Tell your client's story</div></div><span class="xpchip">+10</span></div>
+      <div class="mission"><div class="mi">⚖️</div><div><div class="mt">Spot a suppression issue</div><div class="md">Find the constitutional angle</div></div><span class="xpchip">+15</span></div>
+    </div>
+    <div class="card">
+      <h2>Badges</h2>
+      <p class="hint">Earn them as you work. Locked ones show what's next.</p>
+      <div class="badges" id="badgeRow"></div>
+    </div>
+  </div>
+
+  <!-- DEADLINES -->
+  <div class="pane" id="p-dead">
+    <div class="card">
+      <h2>Add a deadline</h2>
+      <p class="hint">Enter your own dates — nothing about your jurisdiction is assumed. Always confirm against the court calendar.</p>
+      <div class="row">
+        <div><label>Client / case</label><input id="d-case" placeholder="State v. Bell"></div>
+        <div><label>What's due</label><input id="d-title" placeholder="Motion to suppress"></div>
+        <div><label>Date</label><input id="d-date" type="date"></div>
+      </div>
+      <div style="margin-top:10px"><button class="btn" onclick="addDeadline()">Add deadline (+15 XP)</button></div>
+    </div>
+    <div id="deadList"></div>
+  </div>
+
+  <!-- BRADY -->
+  <div class="pane" id="p-brady">
+    <div class="card"><h2>Brady / discovery</h2><p class="hint">Track what's owed vs. turned over. Pick a case.</p><div class="casebar" id="cb-brady"></div></div>
+    <div class="card" id="bradyCard"></div>
+  </div>
+
+  <!-- MITIGATION -->
+  <div class="pane" id="p-mit">
+    <div class="card"><h2>Mitigation packet</h2><p class="hint">Check off what you've gathered. Fill the ring to 100% for a badge + liberty days.</p><div class="casebar" id="cb-mit"></div></div>
+    <div class="card" id="mitCard"></div>
+  </div>
+
+  <!-- SUPPRESSION -->
+  <div class="pane" id="p-supp">
+    <div class="card"><h2>Suppression-issue spotter</h2><p class="hint">Answer what happened. Flags are prompts for your review — not legal conclusions.</p><div class="casebar" id="cb-supp"></div></div>
+    <div class="card" id="suppCard"></div>
+    <div id="suppFlags"></div>
+  </div>
+
+  <!-- FOOTAGE -->
+  <div class="pane" id="p-foot">
+    <div class="card"><h2>Footage log</h2><p class="hint">Log flagged moments as you watch.</p><div class="casebar" id="cb-foot"></div>
+      <div class="row" style="margin-top:6px">
+        <div style="max-width:130px"><label>Timestamp</label><input id="f-ts" placeholder="0:07:41"></div>
+        <div><label>What you saw</label><input id="f-note" placeholder="Search before consent"></div>
+        <div style="max-width:150px"><label>Strength</label><select id="f-sev"><option>Strong</option><option>Review</option><option>Note</option></select></div>
+      </div>
+      <div style="margin-top:10px"><button class="btn" onclick="addFootage()">Add to log (+8 XP)</button></div>
+    </div>
+    <div id="footList"></div>
+  </div>
+
+  <!-- DOCS -->
+  <div class="pane" id="p-docs">
+    <div class="card"><h2>Case documents</h2>
+      <p class="hint">Store PDFs, images, and audio for a case — offline, in this browser, with room for real discovery. Big video files are better kept on your disk and just logged in Footage.</p>
+      <div class="casebar" id="cb-docs"></div>
+      <div class="row" style="margin-top:6px">
+        <div><label for="docFile">Attach files</label><input type="file" id="docFile" multiple></div>
+        <div><label for="docNote">Note (optional)</label><input id="docNote" placeholder="e.g. received 7/18, p.3 redacted"></div>
+        <div style="max-width:150px;align-self:flex-end"><button class="btn" onclick="addDocs()">Add to case (+8 XP)</button></div>
+      </div>
+      <div class="hint" id="docUsage" style="margin-top:8px"></div>
+    </div>
+    <div id="docList"></div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ================= state ================= */
+var KEY="gideon_quest_v1";
+var S={xp:0,lib:0,streak:1,lastDay:"",badges:{},cases:{},deadlines:[],supp:{},cur:"",counters:{brady:0,footage:0}};
+function load(){ try{var s=localStorage.getItem(KEY); if(s)S=Object.assign(S,JSON.parse(s));}catch(e){} }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));flash("Saved");}catch(e){flash("In-memory only");} }
+function flash(t){document.getElementById('saveState').textContent=t;}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function dayDiff(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
+
+/* streak on load */
+function tickStreak(){
+  var t=todayStr();
+  if(S.lastDay!==t){
+    if(S.lastDay){var gap=dayDiff(S.lastDay,t); S.streak = gap===1 ? (S.streak+1) : 1;}
+    else S.streak=1;
+    S.lastDay=t; save();
+  }
+}
+
+/* ================= rewards ================= */
+var LEVELS=["Rookie","Advocate","Counselor","Defender","Champion","Guardian","Legend"];
+function levelInfo(xp){var lvl=1,need=200,rem=xp;while(rem>=need){rem-=need;lvl++;need=lvl*200;}return{lvl:lvl,into:rem,need:need};}
+var toastT;
+function award(xp,opts){
+  opts=opts||{};
+  var before=levelInfo(S.xp).lvl;
+  if(xp)S.xp+=xp;
+  if(opts.lib)S.lib+=opts.lib;
+  var after=levelInfo(S.xp).lvl;
+  var parts=[];
+  if(xp)parts.push('<span class="xp">+'+xp+' XP</span>');
+  if(opts.lib)parts.push('<span class="lib">🕊️ +'+opts.lib+' liberty</span>');
+  if(opts.badge)parts.push('<span class="bd">🏅 '+opts.badge+'</span>');
+  if(opts.msg)parts.push(opts.msg);
+  if(after>before){parts.push('<span class="bd">⬆ Level '+after+'!</span>');confetti();}
+  if(opts.badge||opts.confetti)confetti();
+  toast(parts.join(' &nbsp; ')); heroCheer(); save(); renderHUD();
+}
+function toast(html){var el=document.getElementById('toast');el.innerHTML=html;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2600);}
+function confetti(){
+  var cols=['#46e0a0','#ffbf47','#a78bfa','#5b8cff','#48d6e0','#ff6b81'];
+  for(var i=0;i<70;i++){(function(i){
+    var c=document.createElement('div');c.className='conf';c.style.left=(Math.random()*100)+'vw';c.style.background=cols[i%cols.length];
+    var dur=2+Math.random()*1.5,delay=Math.random()*.3;
+    c.animate([{top:'-20px',opacity:1},{top:'100vh',opacity:.9}],{duration:dur*1000,delay:delay*1000,easing:'cubic-bezier(.3,.1,.3,1)'});
+    document.body.appendChild(c);setTimeout(function(){c.remove();},(dur+delay)*1000);
+  })(i);}
+}
+function heroCheer(){var h=document.getElementById('heroChar');if(!h)return;h.classList.remove('cheer');void h.offsetWidth;h.classList.add('cheer');}
+
+/* ================= badges ================= */
+var BADGES=[
+  {id:"first",ic:"🗂️",name:"First Case"},
+  {id:"clock",ic:"⏰",name:"On the Clock"},
+  {id:"hawk",ic:"🦅",name:"Brady Hawk"},
+  {id:"story",ic:"📖",name:"Storyteller"},
+  {id:"spot",ic:"⚖️",name:"Issue Spotter"},
+  {id:"tape",ic:"🎥",name:"Eyes on Tape"},
+  {id:"fire",ic:"🔥",name:"On Fire"},
+  {id:"guard",ic:"🕊️",name:"Liberty Guardian"}
+];
+function unlock(id){
+  if(S.badges[id])return;
+  S.badges[id]=true;
+  var b=BADGES.find(function(x){return x.id===id;});
+  award(0,{badge:b?b.name:"Badge"});
+  renderBadges();
+}
+function checkBadges(){
+  if(Object.keys(S.cases).length>0) markSilently("first");
+  if(S.deadlines.length>0) markSilently("clock");
+  if(S.streak>=3 && !S.badges.fire) unlock("fire");
+  if(S.lib>=25 && !S.badges.guard) unlock("guard");
+}
+function markSilently(id){ if(!S.badges[id]){S.badges[id]=true; save(); renderBadges(); var b=BADGES.find(x=>x.id===id); toast('<span class="bd">🏅 '+(b?b.name:'')+'</span>'); heroCheer();} }
+
+/* ================= HUD ================= */
+function renderHUD(){
+  document.getElementById('xp').textContent=S.xp;
+  document.getElementById('lib').textContent=S.lib;
+  document.getElementById('streak').textContent=S.streak;
+  var li=levelInfo(S.xp);
+  document.getElementById('lvl').textContent=li.lvl;
+  document.getElementById('lvlName').textContent="· "+(LEVELS[Math.min(li.lvl-1,LEVELS.length-1)]);
+  document.getElementById('xpFill').style.width=Math.round(li.into/li.need*100)+'%';
+}
+function renderBadges(){
+  var host=document.getElementById('badgeRow');host.innerHTML='';
+  BADGES.forEach(function(b){
+    var on=S.badges[b.id];
+    host.innerHTML+='<div class="bg'+(on?'':' locked')+'">'+b.ic+' '+b.name+'</div>';
+  });
+}
+
+/* ================= tabs ================= */
+document.querySelectorAll('.tab').forEach(function(t){t.onclick=function(){
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+  document.querySelectorAll('.pane').forEach(function(x){x.classList.remove('active');});
+  t.classList.add('active');document.getElementById(t.dataset.p).classList.add('active');
+  document.querySelectorAll('.tab').forEach(function(x){x.setAttribute('aria-selected',x.classList.contains('active')?'true':'false');});
+};});
+(function(){var tl=document.querySelector('.tabs');if(tl)tl.setAttribute('role','tablist');document.querySelectorAll('.tab').forEach(function(x){x.setAttribute('role','tab');x.setAttribute('aria-selected',x.classList.contains('active')?'true':'false');});})();
+
+/* ================= shared case bar ================= */
+function caseNames(){return Object.keys(S.cases).sort();}
+function ensureCase(n){if(n&&!S.cases[n]){S.cases[n]={brady:{},mit:{},notes:"",footage:[]};save();}}
+function caseBar(hostId,rerender){
+  var host=document.getElementById(hostId);
+  var opts=caseNames().map(function(c){return '<option '+(c===S.cur?'selected':'')+'>'+esc(c)+'</option>';}).join('')||'<option value="">(none)</option>';
+  host.innerHTML='<label style="margin:0">Case:</label><select class="csel">'+opts+'</select>'
+    +'<input class="cnew" placeholder="New case name" style="min-width:150px">'
+    +'<button class="btn sm addc">Add case</button>';
+  host.querySelector('.csel').onchange=function(e){S.cur=e.target.value;save();rerender();};
+  host.querySelector('.addc').onclick=function(){
+    var nm=host.querySelector('.cnew').value.trim();if(!nm){flash("Enter a case name");return;}
+    var isNew=!S.cases[nm]; ensureCase(nm);S.cur=nm;save();
+    if(isNew)award(10,{msg:"New case created"});
+    checkBadges();rerender();
+  };
+}
+
+/* ================= deadlines ================= */
+function addDeadline(){
+  var c=v('d-case'),t=v('d-title'),d=v('d-date');
+  if(!t||!d){flash("Enter what's due and a date");return;}
+  S.deadlines.push({id:'d'+Date.now(),case:c,title:t,date:d});
+  document.getElementById('d-title').value='';document.getElementById('d-date').value='';
+  award(15,{msg:"Deadline tracked"});checkBadges();renderDead();
+}
+function renderDead(){
+  var host=document.getElementById('deadList');
+  var arr=S.deadlines.slice().sort(function(a,b){return a.date<b.date?-1:1;});
+  if(!arr.length){host.innerHTML='<div class="card empty">No deadlines yet.</div>';return;}
+  host.innerHTML='';var today=new Date();today.setHours(0,0,0,0);
+  arr.forEach(function(x){
+    var diff=Math.round((new Date(x.date+'T00:00:00')-today)/86400000),cls='g',txt=diff+' days left';
+    if(diff<0){cls='r';txt=Math.abs(diff)+' days PAST DUE';}else if(diff===0){cls='r';txt='DUE TODAY';}
+    else if(diff<=3){cls='r';}else if(diff<=10){cls='y';}
+    host.innerHTML+='<div class="item"><div class="h"><span class="nm">'+esc(x.title)+'</span><span class="pill '+cls+'">'+txt+'</span><span class="spacer"></span><button class="btn red sm" onclick="delDead(\''+x.id+'\')">Delete</button></div><div class="meta">'+(x.case?esc(x.case)+' · ':'')+x.date+'</div></div>';
+  });
+}
+function delDead(id){S.deadlines=S.deadlines.filter(function(x){return x.id!==id;});save();renderDead();}
+
+/* ================= brady ================= */
+var BRADY=["Body-worn / dashcam footage (all officers)","Police incident report","Dispatch / CAD logs","911 audio recordings","Officer disciplinary & Brady/Giglio history","Lab / forensic reports","Witness statements","Photographs / scene images","Search & arrest warrants + affidavits","Criminal history of State's witnesses"];
+function renderBrady(){
+  caseBar('cb-brady',renderBrady);
+  var host=document.getElementById('bradyCard');
+  if(!S.cur){host.innerHTML='<div class="empty">Add or pick a case above.</div>';return;}
+  ensureCase(S.cur);var st=S.cases[S.cur].brady,recv=0;
+  var html='<h2 style="font-size:14px">'+esc(S.cur)+'</h2><div class="hint" id="bc"></div>';
+  BRADY.forEach(function(it,i){var s=st[it]||"Outstanding";if(s==="Received")recv++;
+    html+='<div class="check"><div style="flex:1"><div class="l2">'+esc(it)+'</div></div><select onchange="setBrady('+i+',this.value)" style="width:auto;min-width:120px">'+op("Outstanding",s)+op("Received",s)+op("N/A",s)+'</select></div>';});
+  host.innerHTML=html;document.getElementById('bc').textContent=recv+' of '+BRADY.length+' received';
+}
+function setBrady(i,val){
+  var was=S.cases[S.cur].brady[BRADY[i]]||"Outstanding";
+  S.cases[S.cur].brady[BRADY[i]]=val;
+  if(val==="Received"&&was!=="Received"){S.counters.brady=(S.counters.brady||0)+1;award(10,{msg:"Discovery logged"});if(S.counters.brady>=10)unlock("hawk");}
+  else save();
+  renderBrady();
+}
+
+/* ================= mitigation ================= */
+var MIT=[
+"Birth / family records obtained",
+"School records (IEP, special ed, discipline, attendance)",
+"Medical records obtained",
+"Mental health / psychiatric records obtained",
+"Substance-use treatment records obtained",
+"Employment / work history",
+"Family & social history (who raised them, stability)",
+"Trauma & adverse childhood history",
+"Physical & mental health conditions",
+"Substance use & recovery context",
+"Community ties & letters of support gathered",
+"Military / service history (if any)",
+"Client's own account, strengths & goals",
+"Acceptance of responsibility / remorse",
+"Concrete rehabilitation & reentry plan"
+];
+function renderMit(){
+  caseBar('cb-mit',renderMit);
+  var host=document.getElementById('mitCard');
+  if(!S.cur){host.innerHTML='<div class="empty">Add or pick a case above.</div>';return;}
+  ensureCase(S.cur);var c=S.cases[S.cur],done=0;
+  var items='';MIT.forEach(function(it,i){var on=c.mit[it];if(on)done++;items+='<div class="check'+(on?' on':'')+'"><div class="box" onclick="togMit('+i+')">'+(on?'✓':'')+'</div><div class="l2">'+esc(it)+'</div></div>';});
+  var pct=Math.round(done/MIT.length*100);
+  host.innerHTML='<div class="packhead"><div class="ring" style="--p:'+pct+'"><i>'+pct+'%</i></div><div><b>'+esc(S.cur)+'</b><div class="hint">'+done+' of '+MIT.length+' gathered</div></div></div>'+items
+    +'<div style="margin-top:12px"><label>Working notes</label><textarea oninput="mitNotes(this.value)" placeholder="Names, dates, who can write a letter, records to request…">'+esc(c.notes||"")+'</textarea></div>';
+}
+function togMit(i){
+  var it=MIT[i],c=S.cases[S.cur],was=!!c.mit[it];c.mit[it]=!was;
+  if(!was){award(10,{msg:"Added to packet"});}else save();
+  var done=MIT.filter(function(x){return c.mit[x];}).length;
+  if(done===MIT.length && !c.mitDone){c.mitDone=true;award(20,{lib:5,badge:"Storyteller",confetti:true,msg:"Packet complete!"});}
+  checkBadges();renderMit();
+}
+function mitNotes(val){S.cases[S.cur].notes=val;save();}
+
+/* ================= suppression ================= */
+var SUPP=[
+ {g:"The stop / seizure",qs:[
+  ["Did the officer state a specific reason BEFORE the stop?","no","A stop needs reasonable suspicion — review the basis given."],
+  ["Was your client free to leave once detained?","no","If a reasonable person wouldn't feel free to leave, it's a seizure needing justification."],
+  ["Was it YOUR client who was stopped / searched (not just present)?","no","Standing is personal — review whether your client can raise this."],
+  ["Did the stop last longer than its original purpose without new suspicion?","yes","A prolonged stop can exceed its lawful scope."],
+  ["If a car stop — was your client a passenger?","yes","Passengers are also seized and may challenge the stop."]]},
+ {g:"The search",qs:[
+  ["Was there a warrant?","no","No warrant → the state must fit an exception (consent, plain view, exigency, auto, SITA, inventory). Review which."],
+  ["Have you actually seen the warrant + supporting affidavit?","no","Get and read the warrant and affidavit — check probable cause and particularity."],
+  ["Did your client clearly & voluntarily consent?","no","Without valid consent or another exception, the search may be unlawful. Burden is on the State."],
+  ["If someone else consented — did they share authority over the space?","no","Third-party consent turns on joint access/control; a present, objecting occupant matters."],
+  ["Was anything searched beyond the scope of the justification?","yes","A search exceeding its scope can be suppressible."]]},
+ {g:"Statements / Miranda",qs:[
+  ["Was your client in custody AND questioned?","yes","If both are present, review whether Miranda warnings were required here."],
+  ["Were Miranda warnings given before custodial questioning began?","no","Un-Mirandized custodial statements may be suppressible."],
+  ["Did your client invoke silence or counsel?","yes","After a clear invocation, questioning should stop — review what happened next."],
+  ["Did questioning continue after that invocation?","yes","Continued questioning after invocation is a red flag — review closely."],
+  ["Any statements made BEFORE warnings that the State now wants to use?","yes","Review pre-warning statements for suppression."]]},
+ {g:"Eyewitness identification",qs:[
+  ["Was there a show-up, lineup, or photo array?","yes","Review the ID procedure for suggestiveness and reliability."],
+  ["Was only ONE suspect shown (show-up / single photo)?","yes","Single-suspect procedures can be suggestive — review the reliability factors."],
+  ["Post-charge in-person lineup WITHOUT defense counsel present?","yes","Review right-to-counsel at post-charge corporeal identifications."]]},
+ {g:"Record reliability",qs:[
+  ["Does the report contradict the footage or other evidence?","yes","Flag for impeachment and possible Brady disclosure."],
+  ["Are there material omissions in the report vs. what you know?","yes","Missing facts can be as important as false ones — review."]]}
+];
+function renderSupp(){
+  caseBar('cb-supp',renderSupp);
+  var host=document.getElementById('suppCard');
+  if(!S.cur){host.innerHTML='<div class="empty">Add or pick a case above.</div>';document.getElementById('suppFlags').innerHTML='';return;}
+  if(!S.supp[S.cur])S.supp[S.cur]={};
+  var st=S.supp[S.cur],html='<h2 style="font-size:14px">'+esc(S.cur)+'</h2>';
+  SUPP.forEach(function(sec,si){html+='<div class="qgrp"><h3>'+sec.g+'</h3>';sec.qs.forEach(function(q,qi){var id=si+'_'+qi,cur=st[id]||"";
+    html+='<div class="q"><div class="qt">'+esc(q[0])+'</div><select onchange="setSupp(\''+id+'\',this.value)">'+op("",cur,"—")+op("yes",cur,"Yes")+op("no",cur,"No")+op("unsure",cur,"Unsure")+'</select></div>';});html+='</div>';});
+  host.innerHTML=html;renderSuppFlags();
+}
+function setSupp(id,val){
+  var first=!S.supp[S.cur][id];
+  S.supp[S.cur][id]=val;
+  if(first&&val)award(15,{msg:"Answer logged"});else save();
+  renderSuppFlags();
+}
+function renderSuppFlags(){
+  var st=S.supp[S.cur]||{},flags=[];
+  SUPP.forEach(function(sec,si){sec.qs.forEach(function(q,qi){var id=si+'_'+qi,a=st[id];if(a===q[1]||a==="unsure")flags.push(q[2]+(a==="unsure"?" (marked Unsure — pin it down.)":""));});});
+  var out=document.getElementById('suppFlags');
+  if(flags.length>=3 && !S.badges.spot) unlock("spot");
+  if(!flags.length){out.innerHTML='<div class="card"><span class="okmsg">No issues flagged yet. This prompts your judgment — not a legal conclusion.</span></div>';return;}
+  var html='<div class="card"><h2 style="font-size:14px">Potential issues to review ('+flags.length+')</h2><div class="hint">Prompts, not conclusions — you decide.</div>';
+  flags.forEach(function(f){html+='<div class="flag"><b>⚑ Review:</b> '+esc(f)+'</div>';});
+  out.innerHTML=html+'</div>';
+}
+
+/* ================= footage ================= */
+function addFootage(){
+  if(!S.cur){flash("Pick or add a case first (in Brady/Mitigation tabs) — or type one here");}
+  var c=v('f-case')||S.cur;
+  var ts=v('f-ts'),n=v('f-note'),s=v('f-sev');
+  if(!n){flash("Add what you saw");return;}
+  if(c)ensureCase(c);var key=c||"(unassigned)";
+  if(!S.cases[key])S.cases[key]={brady:{},mit:{},notes:"",footage:[]};
+  S.cases[key].footage.push({ts:ts,note:n,sev:s});
+  document.getElementById('f-ts').value='';document.getElementById('f-note').value='';
+  S.counters.footage=(S.counters.footage||0)+1;
+  award(8,{msg:"Moment logged"});
+  if(S.counters.footage>=5)unlock("tape");
+  checkBadges();renderFoot();
+}
+function renderFoot(){
+  caseBar('cb-foot',renderFoot);
+  var host=document.getElementById('footList');
+  var key=S.cur;var list=(key&&S.cases[key])?S.cases[key].footage:[];
+  if(!key){host.innerHTML='<div class="card empty">Pick or add a case above to see its log.</div>';return;}
+  if(!list.length){host.innerHTML='<div class="card empty">No footage notes yet for '+esc(key)+'.</div>';return;}
+  host.innerHTML='';list.forEach(function(x,i){var cls=x.sev==='Strong'?'r':x.sev==='Review'?'y':'b';
+    host.innerHTML+='<div class="item"><div class="h"><span class="pill b">'+esc(x.ts||'—')+'</span><span class="nm">'+esc(x.note)+'</span><span class="pill '+cls+'">'+esc(x.sev)+'</span><span class="spacer"></span><button class="btn red sm" onclick="delFoot('+i+')">Delete</button></div></div>';});
+}
+function delFoot(i){S.cases[S.cur].footage.splice(i,1);save();renderFoot();}
+
+/* ================= helpers ================= */
+function v(id){return document.getElementById(id).value.trim();}
+function esc(s){return (s||"").replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function op(val,cur,label){return '<option value="'+val+'"'+(val===cur?' selected':'')+'>'+(label||val)+'</option>';}
+function exportData(){var b=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download="gideon_quest_backup.json";a.click();}
+function importData(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{S=Object.assign(S,JSON.parse(r.result));save();renderAll();flash("Backup loaded");}catch(e){flash("Invalid backup");}};r.readAsText(f);inp.value="";}
+/* ============ documents — IndexedDB (large offline storage) ============ */
+var _db=null;
+function openDB(){return new Promise(function(res,rej){
+  try{
+    var r=indexedDB.open('gideonDocs',1);
+    r.onupgradeneeded=function(e){var db=e.target.result;if(!db.objectStoreNames.contains('files'))db.createObjectStore('files',{keyPath:'id',autoIncrement:true});};
+    r.onsuccess=function(e){_db=e.target.result;res(_db);};
+    r.onerror=function(){rej();};
+  }catch(e){rej();}
+});}
+function dbStore(mode){return _db.transaction('files',mode).objectStore('files');}
+function human(b){if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(0)+' KB';if(b<1073741824)return (b/1048576).toFixed(1)+' MB';return (b/1073741824).toFixed(2)+' GB';}
+function addDocs(){
+  var inp=document.getElementById('docFile');var files=inp.files;
+  if(!files||!files.length){flash('Choose file(s) first');return;}
+  if(!S.cur){flash('Add or pick a case first');return;}
+  if(!_db){flash('Storage still loading — try again in a moment');return;}
+  var noteEl=document.getElementById('docNote');var note=noteEl?noteEl.value.trim():'';
+  var caseName=S.cur,total=files.length,done=0,ok=0;
+  Array.prototype.forEach.call(files,function(f){
+    var req=dbStore('readwrite').add({case:caseName,name:f.name,type:f.type,size:f.size,blob:f,added:Date.now(),note:note});
+    req.onsuccess=function(){ok++;finish();};
+    req.onerror=function(){flash('Could not store '+f.name);finish();};
+  });
+  function finish(){done++;if(done===total){inp.value='';if(noteEl)noteEl.value='';if(ok)award(8,{msg:ok+' document(s) added'});renderDocs();}}
+}
+function getDocs(caseName){return new Promise(function(res){
+  var out=[];var cur=dbStore('readonly').openCursor();
+  cur.onsuccess=function(e){var c=e.target.result;if(c){if(c.value.case===caseName)out.push(c.value);c.continue();}else res(out);};
+  cur.onerror=function(){res(out);};
+});}
+function delDoc(id){var r=dbStore('readwrite').delete(id);r.onsuccess=function(){renderDocs();};}
+function openDoc(id){var r=dbStore('readonly').get(id);r.onsuccess=function(){var d=r.result;if(!d)return;var url=URL.createObjectURL(d.blob);window.open(url,'_blank');setTimeout(function(){URL.revokeObjectURL(url);},60000);};}
+function renderDocs(){
+  caseBar('cb-docs',renderDocs);
+  var host=document.getElementById('docList');
+  if(navigator.storage&&navigator.storage.estimate){navigator.storage.estimate().then(function(q){var u=document.getElementById('docUsage');if(u)u.textContent='Storage used: '+human(q.usage||0)+' of ~'+human(q.quota||0)+' available on this device.';});}
+  if(!S.cur){host.innerHTML='<div class="card empty">Add or pick a case above.</div>';return;}
+  if(!_db){host.innerHTML='<div class="card empty">Loading document storage…</div>';return;}
+  getDocs(S.cur).then(function(list){
+    if(!list.length){host.innerHTML='<div class="card empty">No documents stored for '+esc(S.cur)+' yet.</div>';return;}
+    host.innerHTML='';
+    list.sort(function(a,b){return b.added-a.added;}).forEach(function(d){
+      var when=new Date(d.added).toLocaleDateString();
+      var meta=when+(d.note?' · '+esc(d.note):'');
+      host.innerHTML+='<div class="item"><div class="h"><span class="nm">'+esc(d.name)+'</span><span class="pill b">'+human(d.size)+'</span><span class="spacer"></span><button class="btn sm" aria-label="Open '+esc(d.name)+'" onclick="openDoc('+d.id+')">Open</button> <button class="btn red sm" aria-label="Delete '+esc(d.name)+'" onclick="delDoc('+d.id+')">Delete</button></div><div class="meta">'+meta+'</div></div>';
+    });
+  });
+}
+
+function toggleA11y(key,cls,btn){S.a11y=S.a11y||{};S.a11y[key]=!S.a11y[key];document.body.classList.toggle(cls,S.a11y[key]);btn.setAttribute('aria-pressed',S.a11y[key]?'true':'false');save();}
+function applyA11y(){S.a11y=S.a11y||{};document.body.classList.toggle('a11y-large',!!S.a11y.large);document.body.classList.toggle('a11y-contrast',!!S.a11y.contrast);document.body.classList.toggle('a11y-nomotion',!!S.a11y.nomotion);
+  var m={large:'a11yText',contrast:'a11yContrast',nomotion:'a11yMotion'};Object.keys(m).forEach(function(k){var b=document.getElementById(m[k]);if(b)b.setAttribute('aria-pressed',S.a11y[k]?'true':'false');});}
+function renderHomeCases(){var sel=document.getElementById('homeCase');if(!sel)return;var names=caseNames();sel.innerHTML=names.map(function(c){return '<option '+(c===S.cur?'selected':'')+'>'+esc(c)+'</option>';}).join('')||'<option value="">(no cases yet)</option>';}
+function setCurFromHome(v){S.cur=v;save();renderAll();}
+function newCaseFromHome(){var el=document.getElementById('homeNew');var nm=el.value.trim();if(!nm){flash('Type a case name');return;}var isNew=!S.cases[nm];ensureCase(nm);S.cur=nm;el.value='';save();if(isNew)award(10,{msg:'New case created'});checkBadges();renderAll();}
+function renderAll(){renderHUD();renderBadges();renderHomeCases();renderDead();renderBrady();renderMit();renderSupp();renderFoot();renderDocs();}
+
+load();tickStreak();checkBadges();renderAll();applyA11y();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+openDB().then(function(){renderDocs();}).catch(function(){var h=document.getElementById('docList');if(h)h.innerHTML='<div class="card empty">This browser blocked local file storage. Try opening the file in Chrome.</div>';});
+</script>
+</body>
+</html>
